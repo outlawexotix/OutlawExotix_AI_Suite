@@ -1,0 +1,184 @@
+{
+  "name": "antigravity-warroom",
+  "displayName": "War Room Integration",
+  "description": "Outlaw Exotix AI agents integrated into Google Antigravity",
+  "version": "1.0.0",
+  "publisher": "outlawexotix",
+  "engines": {
+    "vscode": "^1.80.0",
+    "antigravity": "^1.0.0"
+  },
+  "categories": [
+    "AI",
+    "Agent Systems",
+    "Security"
+  ],
+  "keywords": [
+    "ai",
+    "agents",
+    "claude",
+    "gemini",
+    "war-room",
+    "security"
+  ],
+  "activationEvents": [
+    "onCommand:warroom.summonOverwatch",
+    "onCommand:warroom.summonEthicalHacker",
+    "onCommand:warroom.summonCodeAuditor",
+    "onCommand:warroom.summonApexAnalyst",
+    "onCommand:warroom.summonChiefOfStaff",
+    "onCommand:warroom.openConsole",
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "warroom.summonOverwatch",
+        "title": "War Room: Summon Overwatch (Strategy)",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "warroom.summonEthicalHacker",
+        "title": "War Room: Summon Ethical Hacker (Security Audit)",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "warroom.summonCodeAuditor",
+        "title": "War Room: Summon Code Auditor (Quality Review)",
+        "icon": "$(check)"
+      },
+      {
+        "command": "warroom.summonApexAnalyst",
+        "title": "War Room: Summon Apex Analyst (Research)",
+        "icon": "$(search)"
+      },
+      {
+        "command": "warroom.summonChiefOfStaff",
+        "title": "War Room: Summon Chief of Staff (Delegation)",
+        "icon": "$(organization)"
+      },
+      {
+        "command": "warroom.openConsole",
+        "title": "War Room: Open Console",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "warroom.runTests",
+        "title": "War Room: Run Test Suite",
+        "icon": "$(beaker)"
+      },
+      {
+        "command": "warroom.viewMemory",
+        "title": "War Room: View Shared Memory",
+        "icon": "$(book)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "warroom.summonOverwatch"
+        },
+        {
+          "command": "warroom.summonEthicalHacker"
+        },
+        {
+          "command": "warroom.summonCodeAuditor"
+        },
+        {
+          "command": "warroom.summonApexAnalyst"
+        },
+        {
+          "command": "warroom.summonChiefOfStaff"
+        },
+        {
+          "command": "warroom.openConsole"
+        },
+        {
+          "command": "warroom.runTests"
+        },
+        {
+          "command": "warroom.viewMemory"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "warroom.summonCodeAuditor",
+          "group": "warroom@1",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "warroom.summonEthicalHacker",
+          "group": "warroom@2",
+          "when": "editorHasSelection"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "War Room",
+      "properties": {
+        "warroom.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Path to Python executable"
+        },
+        "warroom.toolsPath": {
+          "type": "string",
+          "default": "./tools",
+          "description": "Path to War Room tools directory"
+        },
+        "warroom.binPath": {
+          "type": "string",
+          "default": "./bin",
+          "description": "Path to agent launcher scripts"
+        },
+        "warroom.memoryFile": {
+          "type": "string",
+          "default": "./PROJECT_MEMORY.md",
+          "description": "Path to shared memory file"
+        },
+        "warroom.autoShowMemory": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically show memory updates after agent runs"
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "warroom",
+          "title": "War Room",
+          "icon": "$(rocket)"
+        }
+      ]
+    },
+    "views": {
+      "warroom": [
+        {
+          "id": "warroomAgents",
+          "name": "Agents"
+        },
+        {
+          "id": "warroomMemory",
+          "name": "Shared Memory"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "node ./test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "^18.x",
+    "eslint": "^8.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/outlawexotix/OutlawExotix_AI_Suite.git"
+  },
+  "license": "MIT"
+}

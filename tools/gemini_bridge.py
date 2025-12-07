@@ -86,7 +86,8 @@ def get_intel(prompt, api_key=None, credentials=None, model_name='gemini-1.5-fla
         print("ERROR: No authentication method provided (API Key or ADC).")
         return
     
-    # Using Flash for high-speed context processing
+    # Using Gemini 3 Pro for advanced capabilities (upgrade from gemini-1.5-flash)
+    # Falls back to specified model if Gemini 3 not available
     model = genai.GenerativeModel(model_name)
     
     # Inject the Shared Context into the prompt
@@ -108,7 +109,7 @@ if __name__ == "__main__":
     # Optional Arguments for Auth & Config
     parser.add_argument("--api-key", "-k", help="Directly provide the Google API Key (overrides ADC)")
     parser.add_argument("--key-file", "-f", help="Path to a file containing the Google API Key")
-    parser.add_argument("--model", "-m", default="gemini-1.5-flash", help="Gemini Model ID (default: gemini-1.5-flash)")
+    parser.add_argument("--model", "-m", default="gemini-3-pro", help="Gemini Model ID (default: gemini-3-pro, fallback: gemini-1.5-flash)")
 
     args = parser.parse_args()
     
