@@ -5,164 +5,166 @@ import time
 import shutil
 from colorama import Fore, Back, Style, init
 
-# Initialize colors
 init()
 
-# --- CONFIGURATION ---
-# Use environment variables for flexibility, or fallback to your hardcoded paths
-GEMINI_BRIDGE = os.getenv("GEMINI_BRIDGE_PATH", r"gemini_bridge.py") 
-# Note: Ensure claude.exe is in your PATH or provide full absolute path below
-CLAUDE_EXE = os.getenv("CLAUDE_EXE_PATH", r"C:\Users\penne\.local\bin\claude.exe")
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+GEMINI_BRIDGE = os.path.join(current_dir, "gemini_bridge.py")
+CODEX_BRIDGE = os.path.join(current_dir, "codex_bridge.py")
+TEMPLATES_DIR = os.path.join(project_root, "templates")
 
-# --- UTILITIES ---
+if os.name == "nt":
+    CLAUDE_EXE = r"C:\Users\penne\.local\bin\claude.exe"
+else:
+    CLAUDE_EXE = shutil.which("claude") or "claude"
 
 def clear_screen():
-    os.system('cls' if os.name == 'nt' else 'clear')
-
-def check_dependencies():
-    """Verifies that external tools exist before starting."""
-    missing = []
-    
-    # Check Gemini Bridge
-    if not os.path.exists(GEMINI_BRIDGE):
-        # If it's just a filename, check if it's in the current dir
-        if not os.path.exists(os.path.join(os.getcwd(), GEMINI_BRIDGE)):
-            missing.append(f"Gemini Bridge not found at: {GEMINI_BRIDGE}")
-
-    # Check Claude Executable
-    # If it's a full path, check it. If it's just a command, check shutil.which
-    if os.path.isabs(CLAUDE_EXE):
-        if not os.path.exists(CLAUDE_EXE):
-            missing.append(f"Claude Executable not found at: {CLAUDE_EXE}")
-    else:
-        if shutil.which(CLAUDE_EXE) is None:
-             missing.append(f"Command '{CLAUDE_EXE}' not found in PATH.")
-
-    if missing:
-        print(f"{Fore.RED}[SYSTEM CRITICAL] MISSING DEPENDENCIES:{Style.RESET_ALL}")
-        for m in missing:
-            print(f"{Fore.RED} - {m}{Style.RESET_ALL}")
-        print(f"\n{Fore.YELLOW}Please configure paths in outlaw_exotix.py or set environment variables.{Style.RESET_ALL}")
-        sys.exit(1)
-
-def type_effect(text, delay=0.01, color=Fore.WHITE):
-    """Prints text character by character for a typing effect."""
-    sys.stdout.write(color)
-    for char in text:
-        sys.stdout.write(char)
-        sys.stdout.flush()
-        time.sleep(delay)
-    print(Style.RESET_ALL)
+    os.system("cls" if os.name == "nt" else "clear")
 
 def draw_header():
     clear_screen()
     print(f"{Fore.RED}{Style.BRIGHT}")
-    print(r"██╗     ██╗ █████╗ ██████╗      ██████╗  ██████╗  ██████╗ ███╗   ███╗")
-    print(r"██║     ██║██╔══██╗██╔══██╗     ██╔══██╗██╔═══██╗██╔═══██╗████╗ ████║")
-    print(r"██║  █╗ ██║███████║██████╔╝     ██████╔╝██║   ██║██║   ██║██╔████╔██║")
-    print(r"██║███╗██║██╔══██║██╔══██╗     ██╔══██╗██║   ██║██║   ██║██║╚██╔╝██║")
-    print(r"╚███╔███╔╝██║  ██║██║  ██║     ██║  ██║╚██████╔╝╚██████╔╝██║ ╚═╝ ██║")
-    print(r" ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝     ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═╝     ╚═╝")
-    print(f"{Fore.YELLOW} >> OUTLAW EXOTIX // SYSTEM OVERRIDE // AUTH: LORD PENNE << {Style.RESET_ALL}")
-    print("\n")
+    print("=============================================================")
+    print("   OUTLAW EXOTIX // WAR ROOM CONSOLE // MK.II CROSS-PLATFORM")
+    print("=============================================================")
+    print(f"{Style.RESET_ALL}")
 
-def print_panel(title, text, color, width=60):
-    """Generic panel printer for cleaner code."""
-    border_color = color
-    print(f"\n{border_color}╔═ [ {title} ] {'═' * (width - len(title) - 7)}╗{Style.RESET_ALL}")
-    
-    lines = text.strip().split('\n')
-    for line in lines:
-        # Simple word wrapping could go here, but for code/CLI output, direct printing is safer
-        # to preserve formatting of lists/code blocks.
-        clean_line = line.replace('\t', '    ')
-        print(f"{border_color}║{Style.RESET_ALL} {clean_line}")
-
-    print(f"{border_color}╚{'═' * (width - 2)}╝{Style.RESET_ALL}")
-
-def loading_sequence():
-    chars = "/-\|"
-    print(f"{Fore.YELLOW}[SYSTEM] ESTABLISHING SECURE CONNECTION...", end="")
-    for _ in range(10):
-        for char in chars:
-            sys.stdout.write(f"\b{char}")
-            sys.stdout.flush()
-            time.sleep(0.1)
-    print(f"\b{Fore.GREEN}LOCKED.{Style.RESET_ALL}")
-    time.sleep(0.5)
-
-# --- MAIN LOOP ---
-
-def main():    
-    check_dependencies()
+def main():
     draw_header()
-    loading_sequence()
-
-    type_effect("[INFO] GEMINI BRIDGE: ACTIVE", 0.02, Fore.CYAN)
-    type_effect("[INFO] CLAUDE ENGINE: ACTIVE", 0.02, Fore.GREEN)
-    type_effect("[INFO] MNEMOSYNE MEMORY: LINKED", 0.02, Fore.MAGENTA)
-    print("\n")
+    print(f"{Fore.GREEN}[SYSTEM] ALL SYSTEMS ONLINE.{Style.RESET_ALL}\n")
+    
+    current_system_prompt = None
+    active_persona_name = "Default"
 
     while True:
         try:
-            print(f"{Fore.RED}┌──( {Fore.WHITE}COMMANDER {Fore.RED})-[ {Fore.WHITE}WAR ROOM {Fore.RED}]")
-            user_input = input(f"└─{Fore.RED}► {Style.RESET_ALL}")
+            prompt_color = Fore.RED if active_persona_name == "Default" else Fore.MAGENTA
+            user_input = input(f"{prompt_color}COMMANDER [{active_persona_name}] > {Style.RESET_ALL}")
+            
+            if user_input.lower() in ["exit", "quit", "/q"]: break
+            if not user_input.strip(): continue
 
-            if user_input.lower() in ['exit', 'quit', '/q']:
-                print(f"\n{Fore.RED}[SYSTEM] TERMINATING LINK. GOOD HUNTING, MY LORD.{Style.RESET_ALL}")
-                break
+            # --- COMMAND PARSING ---
+            cmd_lower = user_input.lower()
+            
+            # 1. MODE SWITCHING (/mode)
+            if cmd_lower.startswith("/mode "):
+                target_mode = user_input[6:].strip()
+                
+                if target_mode.lower() == "reset":
+                    current_system_prompt = None
+                    active_persona_name = "Default"
+                    print(f"{Fore.YELLOW}[SYSTEM] Persona reset to Default.{Style.RESET_ALL}")
+                    continue
 
-            if not user_input.strip():
+                template_path = os.path.join(TEMPLATES_DIR, f"{target_mode}.md")
+                if os.path.exists(template_path):
+                    try:
+                        with open(template_path, "r", encoding="utf-8") as f:
+                            current_system_prompt = f.read()
+                        active_persona_name = target_mode.upper()
+                        print(f"{Fore.YELLOW}[SYSTEM] Persona Active: {active_persona_name}{Style.RESET_ALL}")
+                    except Exception as e:
+                        print(f"{Fore.RED}[ERROR] Failed to load template: {e}{Style.RESET_ALL}")
+                else:
+                    print(f"{Fore.RED}[ERROR] Template not found: {template_path}{Style.RESET_ALL}")
+                    print(f"Available: {[f.replace('.md','') for f in os.listdir(TEMPLATES_DIR) if f.endswith('.md')]}")
                 continue
 
-            # PHASE 1: GEMINI ANALYSIS
-            print(f"\n{Fore.CYAN}>>> UPLINKING TO ORBIT...{Style.RESET_ALL}")
-            gemini_prompt = f"You are a Strategic Advisor. The user wants to: '{user_input}'. Provide specific tactical advice, warnings, or the best way to do this via CLI. Keep it brief and punchy."
-
-            # Use sys.executable to ensure we use the same python interpreter
-            gemini_process = subprocess.run(
-                [sys.executable, GEMINI_BRIDGE, gemini_prompt],
-                capture_output=True, text=True, encoding='utf-8'
-            )
+            # 2. EXECUTION FLAGS
+            skip_advisor = False
+            skip_execution = False
+            advisor_script = GEMINI_BRIDGE
+            advisor_color = Fore.CYAN
+            advisor_type = "GEMINI STRATEGY"
             
-            gemini_advice = gemini_process.stdout.strip()
+            real_prompt = user_input # Default prompt
             
-            if gemini_process.returncode != 0:
-                print(f"{Fore.RED}[ERROR] GEMINI UPLINK FAILED:{Style.RESET_ALL}")
-                print(gemini_process.stderr)
-                gemini_advice = "ADVISORY UNAVAILABLE due to connection error."
+            if cmd_lower.startswith("/execute "):
+                # Direct Link: Skip Advisor
+                skip_advisor = True
+                real_prompt = user_input[9:].strip()
+                
+            elif cmd_lower.startswith("/consult "):
+                # Silent Mode: Skip Execution
+                skip_execution = True
+                real_prompt = user_input[9:].strip()
+                # Optional: Consult Codex specific
+                if real_prompt.lower().startswith("codex "):
+                    advisor_script = CODEX_BRIDGE
+                    advisor_color = Fore.BLUE
+                    advisor_type = "CODEX BLUEPRINT"
+                    real_prompt = real_prompt[6:].strip()
+
+            elif cmd_lower.startswith("/codex "):
+                # Codex Mode: Use Codex Advisor
+                advisor_script = CODEX_BRIDGE
+                advisor_color = Fore.BLUE
+                advisor_type = "CODEX BLUEPRINT"
+                real_prompt = user_input[7:].strip()
+
+            # --- STEP 1: ADVISOR PHASE ---
+            advice_content = ""
+            if not skip_advisor:
+                print(f"\n{advisor_color}>>> UPLINKING TO {advisor_type.split()[0]}...{Style.RESET_ALL}")
+                try:
+                    # Construct prompt for advisor
+                    advisor_input = f"Advice for: {real_prompt}"
+                    # If Codex, just pass the prompt directly as a task
+                    if advisor_script == CODEX_BRIDGE:
+                        advisor_input = real_prompt
+                        
+                    advisor_process = subprocess.run(
+                        [sys.executable, advisor_script, advisor_input], 
+                        capture_output=True, text=True
+                    )
+                    advice_content = advisor_process.stdout.strip()
+                    
+                    # Print Advisor Output
+                    print(f"{advisor_color}{advice_content}{Style.RESET_ALL}")
+                    
+                    if advisor_process.stderr:
+                         # Optional: Print stderr if verbose, or just if it looks like a real error
+                         pass 
+
+                except Exception as e:
+                    print(f"{Fore.RED}[ADVISOR ERROR] {e}{Style.RESET_ALL}")
             
-            print_panel("GEMINI SATELLITE UPLINK", gemini_advice, Fore.CYAN)
+            # --- STEP 2: CLAUDE PHASE ---
+            if not skip_execution:
+                print(f"{Fore.GREEN}>>> CLAUDE EXECUTING...{Style.RESET_ALL}")
+                
+                # Construct Combined Prompt
+                if skip_advisor:
+                    combined_prompt = real_prompt
+                else:
+                    combined_prompt = f"REQUEST: {real_prompt}\n\n[{advisor_type}]:\n{advice_content}"
+                
+                # Build Command
+                cmd = []
+                if os.name == "nt":
+                     # Windows PowerShell Invocation
+                     ps_cmd = f"& \"{CLAUDE_EXE}\" -p \"{combined_prompt}\" --dangerously-skip-permissions"
+                     if current_system_prompt:
+                         # Escape quotes for PowerShell/JSON safety if needed, 
+                         # but for now simplistic passing. Ideally save to temp file to be safe.
+                         # For CLI argument, we strip newlines to avoid shell breakage or rely on Claude's handling
+                         sanitized_sys = current_system_prompt.replace('\n', ' ').replace('"', "'")
+                         ps_cmd += f" --system-prompt \"{sanitized_sys}\""
+                     
+                     cmd = ["powershell", "-Command", ps_cmd]
+                else:
+                     # Linux/Bash Invocation
+                     cmd = [CLAUDE_EXE, "-p", combined_prompt, "--dangerously-skip-permissions"]
+                     if current_system_prompt:
+                         cmd.extend(["--system-prompt", current_system_prompt])
 
-            # PHASE 2: CLAUDE EXECUTION
-            print(f"\n{Fore.GREEN}>>> DEPLOYING ASSETS...{Style.RESET_ALL}")
-
-            combined_prompt = f"USER REQUEST: {user_input}\n\nSTRATEGIC ADVICE: {gemini_advice}\n\nINSTRUCTIONS: Execute the user request, adhering to the strategic advice."
-
-            # Execute Claude. 
-            # Note: The original code used PowerShell wrapping. We keep that if on Windows.
-            if os.name == 'nt':
-                claude_process = subprocess.run(
-                    ["powershell", "-Command", f'& "{CLAUDE_EXE}" -p "{combined_prompt}" --dangerously-skip-permissions'],
-                    capture_output=True, text=True, encoding='utf-8'
-                )
-            else:
-                # Linux/Mac direct execution
-                claude_process = subprocess.run(
-                    [CLAUDE_EXE, "-p", combined_prompt, "--dangerously-skip-permissions"],
-                    capture_output=True, text=True, encoding='utf-8'
-                )
-
-            output = claude_process.stdout if claude_process.stdout.strip() else claude_process.stderr
-            print_panel("CLAUDE FIELD OPS", output, Fore.GREEN)
-
-            print(f"{Fore.YELLOW}[MISSION CYCLE COMPLETE]{Style.RESET_ALL}\n")
+                try:
+                    claude_process = subprocess.run(cmd, capture_output=True, text=True)
+                    print(f"{Fore.GREEN}{claude_process.stdout}{Style.RESET_ALL}")
+                    if claude_process.stderr: print(f"{Fore.RED}{claude_process.stderr}{Style.RESET_ALL}")
+                except Exception as e:
+                     print(f"{Fore.RED}[CLAUDE ERROR] {e}{Style.RESET_ALL}")
 
         except KeyboardInterrupt:
-            print(f"\n{Fore.RED}[SYSTEM] EMERGENCY HALT.{Style.RESET_ALL}")
             break
-        except Exception as e:
-            print(f"\n{Fore.RED}[CRITICAL FAILURE] {str(e)}{Style.RESET_ALL}")
-
-if __name__ == "__main__":
-    main()
