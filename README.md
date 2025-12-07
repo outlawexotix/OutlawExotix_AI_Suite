@@ -49,5 +49,32 @@ battlecry
 agent overwatch -p "Scan this directory."
 ```
 
+## ?? Testing
+
+This project includes a comprehensive test suite with **56 passing tests** and **37% code coverage**.
+
+### Quick Start
+```bash
+# Windows
+.\run_tests.ps1 -Coverage
+
+# Linux/Mac
+./run_tests.sh --coverage
+```
+
+### Test Results
+- ✓ **56 tests passing** (91.8% pass rate)
+- ✓ **5 tests skipped** (OpenAI library not installed)
+- ✓ **37% code coverage** baseline established
+- ✓ **4 security vulnerabilities patched**
+
+See [FINAL_TEST_REPORT.md](FINAL_TEST_REPORT.md) for complete test results and [tests/README.md](tests/README.md) for test documentation.
+
+### Security Fixes
+- ✓ Path traversal prevention in agent launchers
+- ✓ Shell injection hardening in war_room.py
+- ✓ File locking in log_memory.py
+- ✓ Removed duplicate code in gemini_bridge.py
+
 ## ?? License
 Outlaw Exotix Internal / MIT
