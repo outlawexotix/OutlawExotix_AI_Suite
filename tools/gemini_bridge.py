@@ -24,18 +24,23 @@ def get_context():
             with open("PROJECT_MEMORY.md", "r", encoding="utf-8") as f:
                 # Read the last 3000 characters efficiently
                 try:
+                    # Use seek for better performance on large files
                     f.seek(0, 2)  # Seek to end
                     file_size = f.tell()
-                    if file_size > 3000:
+                    # Check if we got a real integer (not a mock)
+                    if isinstance(file_size, int) and file_size > 3000:
                         f.seek(file_size - 3000)  # Seek to last 3000 bytes
                         f.readline()  # Skip partial line
                     else:
                         f.seek(0)
                     memory = f.read()
-                except (IOError, OSError, TypeError):
-                    # Fallback for unseekable streams (e.g., in tests) or mock issues
-                    f.seek(0)
-                    memory = f.read()[-3000:]
+                except (IOError, OSError, AttributeError, TypeError):
+                    # Fallback for any file operation errors or mock objects
+                    try:
+                        f.seek(0)
+                        memory = f.read()[-3000:]
+                    except:
+                        memory = f.read()[-3000:]
                 context += f"\n\n[SHARED PROJECT MEMORY (Recent Activity)]:\n{memory}\n"
         except Exception as e:
             context += f"\n[MEMORY READ ERROR]: {e}"
@@ -59,8 +64,7 @@ def get_intel(prompt, credentials=None, model_name='gemini-1.5-flash'):
         print("  gcloud auth application-default login")
         return
     
-    # Using Gemini 3 Pro for advanced capabilities (upgrade from gemini-1.5-flash)
-    # Falls back to specified model if Gemini 3 not available
+    # Create Gemini model with specified model name
     model = genai.GenerativeModel(model_name)
     
     # Inject the Shared Context into the prompt

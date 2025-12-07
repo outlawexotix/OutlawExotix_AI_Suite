@@ -16,7 +16,7 @@ def log_entry(entry):
 
     # Cross-platform file locking with efficient retry
     max_retries = 5
-    retry_delay = 0.05  # Start with lower delay for faster operations
+    retry_delay = 0.05  # Optimized from 0.1s for faster file operations
 
     for attempt in range(max_retries):
         try:
