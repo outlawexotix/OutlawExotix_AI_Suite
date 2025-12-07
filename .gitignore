@@ -61,3 +61,7 @@ token.json
 
 # Test Artifacts
 _test_output.txt
+
+# Harvester & Vision Artifacts
+loot/
+vision_temp_audio.*

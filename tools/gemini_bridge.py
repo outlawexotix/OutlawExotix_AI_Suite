@@ -13,6 +13,8 @@ try:
 except ImportError:
     OAUTH_AVAILABLE = False
 
+import memory_core
+
 def get_context() -> str:
     """
     Gathers context from the environment to provide spatial and historical awareness to Gemini.
@@ -29,32 +31,11 @@ def get_context() -> str:
     except Exception as e:
         context += f"\n[DIRECTORY READ ERROR]: {str(e)}"
 
-    # 2. HISTORICAL AWARENESS: Read the Project Memory Log
-    # This is the file Claude writes to. Now Gemini reads it too.
-    memory_path = "PROJECT_MEMORY.md"
-    if os.path.exists(memory_path):
-        import time # Lazy import to avoid global changes if possible, or assume global import
-        
-        max_retries = 5
-        retry_delay = 0.1
-        
-        for attempt in range(max_retries):
-            try:
-                with open(memory_path, "r", encoding="utf-8") as f:
-                    # Read the last 3000 characters to keep context fresh but concise
-                    memory = f.read()[-3000:] 
-                    context += f"\n\n[SHARED PROJECT MEMORY (Recent Activity)]:\n{memory}\n"
-                break
-            except (IOError, OSError):
-                 if attempt < max_retries - 1:
-                     time.sleep(retry_delay)
-                     retry_delay *= 2
-                 else:
-                     context += f"\n[MEMORY READ ERROR]: Timeout (Locked)"
-            except Exception as e:
-                context += f"\n[MEMORY READ ERROR]: {str(e)}"
-                break
-            
+    # 2. HISTORICAL AWARENESS: Read the Project Memory Core
+    memory = memory_core.fetch_context(char_limit=3000)
+    if memory:
+        context += f"\n\n[SHARED PROJECT MEMORY (Recent Activity)]:\n{memory}\n"
+    
     return context
 
 def authenticate_oauth() -> Any:

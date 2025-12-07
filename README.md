@@ -16,7 +16,7 @@ This suite integrates **Claude Code CLI** (Execution) and **Google Gemini API** 
 1.  **Prerequisites:**
     *   Python 3.10+ (`pip install google-generativeai colorama`)
     *   Claude Code CLI (`npm install -g @anthropic-ai/claude-code` OR native installer)
-    *   Google Gemini API Key (`GOOGLE_API_KEY` env var)
+    *   Google Gemini API Key (`GOOGLE_API_KEY` env var) OR a Google Cloud Project for OAuth.
 
 2.  **Setup:**
     *   Copy `tools/*.py` to your preferred tools directory (e.g., `~/.claude/tools`).
@@ -26,8 +26,17 @@ This suite integrates **Claude Code CLI** (Execution) and **Google Gemini API** 
 3.  **The "Battle Cry" Alias:**
     Add this to your PowerShell profile:
     ```powershell
-    Set-Alias -Name battlecry -Value 'python Path\To\tools\war_room.py'
+    Sets-Alias -Name battlecry -Value 'python Path\To\tools\war_room.py'
     ```
+
+### Authentication Options
+You can authenticate with Gemini in two ways:
+1.  **API Key (Simplest):** Set `GOOGLE_API_KEY` environment variable.
+2.  **Native OAuth (Recommended):**
+    *   Download your OAuth 2.0 Client ID JSON from Google Cloud Console.
+    *   Rename it to `client_secret.json` and place it in the project root.
+    *   Run any command; a browser window will open for you to sign in.
+    *   Authentication is cached in `token.json`.
 
 ## ?? The Agents
 

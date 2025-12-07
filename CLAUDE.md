@@ -16,7 +16,12 @@ The **Outlaw Exotix AI Suite (War Room)** is a dual-AI orchestration system that
 
 **War Room Flow** (`tools/war_room.py`):
 ```
-User Input → Gemini (Strategic Advice) → Claude (Execution with Context) → Output
+User Input → /consult [gemini|codex] → Advice
+User Input → /execute → Claude
+User Input → /interpreter → Open Interpreter (Local Code)
+User Input → /opencode → OpenCode CLI (Go Agent)
+User Input → /youtube → Vision Bridge (Summarize Video)
+User Input → /harvest → Harvester Agent (Scrape & Download Assets)
 ```
 
 **Agent Invocation** (`bin/agent.sh` or `bin/agent.ps1`):

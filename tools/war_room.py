@@ -173,6 +173,45 @@ class WarRoomConsole:
             advisor_color = Fore.BLUE
             advisor_name = "CODEX"
             real_prompt = user_input[7:].strip()
+        elif cmd_lower.startswith("/interpreter "):
+            # Open Interpreter Integration
+            print(f"{Fore.MAGENTA}>>> LAUNCHING OPEN INTERPRETER...{Style.RESET_ALL}")
+            interpreter_script = os.path.join(CURRENT_DIR, "interpreter_bridge.py")
+            subprocess.run([sys.executable, interpreter_script, user_input[13:].strip()])
+            return # Return to loop after interactive session
+        elif cmd_lower.startswith("/opencode"):
+            # OpenCode CLI Integration (Go)
+            print(f"{Fore.CYAN}>>> LAUNCHING OPENCODE CLI...{Style.RESET_ALL}")
+            if shutil.which("opencode"):
+                subprocess.run(["opencode"] + user_input.split()[1:])
+            else:
+                print(f"{Fore.RED}[ERROR] 'opencode' binary not found in PATH.{Style.RESET_ALL}")
+                print("To enable this feature, you must install Go and OpenCode:")
+                print("1. Install Go: winget install GoLang.Go")
+                print("2. Install OpenCode: go install github.com/opencode/opencode@latest")
+            return
+        elif cmd_lower.startswith("/youtube ") or cmd_lower.startswith("/vision "):
+            # Operation Vision: Universal Summarizer (God Mode)
+            print(f"{Fore.RED}>>> ACTIVATING UNIVERSAL VISION PROTOCOLS...{Style.RESET_ALL}")
+            vision_script = os.path.join(CURRENT_DIR, "vision_bridge.py")
+            parts = user_input.split(maxsplit=1)
+            if len(parts) > 1:
+                subprocess.run([sys.executable, vision_script, parts[1].strip()])
+            else:
+                 print(f"{Fore.RED}[ERROR] URL required. Usage: /vision <url>{Style.RESET_ALL}")
+            return
+        elif cmd_lower.startswith("/harvest ") or cmd_lower.startswith("/scrape "):
+            # Operation Harvester: Web Intelligence
+            print(f"{Fore.MAGENTA}>>> DEPLOYING HARVESTER AGENT...{Style.RESET_ALL}")
+            harvester_script = os.path.join(CURRENT_DIR, "harvester_bridge.py")
+            parts = user_input.split(maxsplit=2) # /harvest <url> [query]
+            if len(parts) >= 2:
+                target_url = parts[1].strip()
+                query = parts[2].strip() if len(parts) > 2 else "Download all relevant files"
+                subprocess.run([sys.executable, harvester_script, target_url, query])
+            else:
+                 print(f"{Fore.RED}[ERROR] Usage: /harvest <url> [search_query]{Style.RESET_ALL}")
+            return
 
         # 3. Advisor Phase
         advice_content = ""

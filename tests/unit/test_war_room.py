@@ -126,5 +126,64 @@ class TestWarRoomConsole:
         console.draw_header()
         mock_clear.assert_called_once()
 
+
+    @patch('shutil.which')
+    @patch('subprocess.run')
+    def test_parse_command_opencode_missing(self, mock_run, mock_which, console):
+        """Test /opencode command when binary is missing"""
+        mock_which.return_value = None
+        console.parse_command("/opencode test")
+        
+        # Should NOT run subprocess
+        mock_run.assert_not_called()
+        # Which should be called
+        mock_which.assert_called_with("opencode")
+
+    @patch('shutil.which')
+    @patch('subprocess.run')
+    def test_parse_command_opencode_found(self, mock_run, mock_which, console):
+        """Test /opencode command when binary exists"""
+        mock_which.return_value = "/bin/opencode"
+        console.parse_command("/opencode prompt")
+        
+        mock_run.assert_called_with(["opencode", "prompt"])
+
+    @patch('subprocess.run')
+    def test_parse_command_interpreter(self, mock_run, console):
+        """Test /interpreter command execution"""
+        with patch('sys.executable', 'python_exe'):
+            console.parse_command("/interpreter run this")
+            
+            # Should look for interpreter_bridge.py
+            args = mock_run.call_args[0][0]
+            assert args[0] == 'python_exe'
+            assert 'interpreter_bridge.py' in args[1]
+            assert args[2] == 'run this'
+
+    @patch('subprocess.run')
+    def test_parse_command_youtube(self, mock_run, console):
+        """Test /youtube /vision command execution"""
+        with patch('sys.executable', 'python_exe'):
+            console.parse_command("/vision https://vimeo.com/video_id")
+            
+            # Should look for vision_bridge.py (Universal)
+            args = mock_run.call_args[0][0]
+            assert args[0] == 'python_exe'
+            assert 'vision_bridge.py' in args[1]
+            assert args[2] == 'https://vimeo.com/video_id'
+
+    @patch('subprocess.run')
+    def test_parse_command_harvest(self, mock_run, console):
+        """Test /harvest command execution"""
+        with patch('sys.executable', 'python_exe'):
+            console.parse_command("/harvest https://example.com query")
+            
+            # Should look for harvester_bridge.py
+            args = mock_run.call_args[0][0]
+            assert args[0] == 'python_exe'
+            assert 'harvester_bridge.py' in args[1]
+            assert args[2] == 'https://example.com'
+            assert args[3] == 'query'
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
