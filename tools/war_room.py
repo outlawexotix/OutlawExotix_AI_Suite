@@ -140,24 +140,33 @@ def main():
                 else:
                     combined_prompt = f"REQUEST: {real_prompt}\n\n[{advisor_type}]:\n{advice_content}"
                 
-                # Build Command
+                # Build Command - Use temp files to avoid shell injection
+                import tempfile
+
                 cmd = []
-                if os.name == "nt":
-                     # Windows PowerShell Invocation
-                     ps_cmd = f"& \"{CLAUDE_EXE}\" -p \"{combined_prompt}\" --dangerously-skip-permissions"
-                     if current_system_prompt:
-                         # Escape quotes for PowerShell/JSON safety if needed, 
-                         # but for now simplistic passing. Ideally save to temp file to be safe.
-                         # For CLI argument, we strip newlines to avoid shell breakage or rely on Claude's handling
-                         sanitized_sys = current_system_prompt.replace('\n', ' ').replace('"', "'")
-                         ps_cmd += f" --system-prompt \"{sanitized_sys}\""
-                     
-                     cmd = ["powershell", "-Command", ps_cmd]
-                else:
-                     # Linux/Bash Invocation
-                     cmd = [CLAUDE_EXE, "-p", combined_prompt, "--dangerously-skip-permissions"]
-                     if current_system_prompt:
-                         cmd.extend(["--system-prompt", current_system_prompt])
+                prompt_file = None
+                system_file = None
+
+                try:
+                    # Write prompt to temp file for security
+                    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt', encoding='utf-8') as pf:
+                        pf.write(combined_prompt)
+                        prompt_file = pf.name
+
+                    # Write system prompt to temp file if exists
+                    if current_system_prompt:
+                        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt', encoding='utf-8') as sf:
+                            sf.write(current_system_prompt)
+                            system_file = sf.name
+
+                    # Build command with file arguments (no shell injection risk)
+                    cmd = [CLAUDE_EXE, "-p", f"@{prompt_file}", "--dangerously-skip-permissions"]
+                    if system_file:
+                        cmd.extend(["--system-prompt", f"@{system_file}"])
+
+                except Exception as e:
+                    print(f"{Fore.RED}[ERROR] Failed to create temp files: {e}{Style.RESET_ALL}")
+                    continue
 
                 try:
                     claude_process = subprocess.run(cmd, capture_output=True, text=True)
@@ -165,6 +174,18 @@ def main():
                     if claude_process.stderr: print(f"{Fore.RED}{claude_process.stderr}{Style.RESET_ALL}")
                 except Exception as e:
                      print(f"{Fore.RED}[CLAUDE ERROR] {e}{Style.RESET_ALL}")
+                finally:
+                    # Cleanup temp files
+                    if prompt_file and os.path.exists(prompt_file):
+                        try:
+                            os.unlink(prompt_file)
+                        except:
+                            pass
+                    if system_file and os.path.exists(system_file):
+                        try:
+                            os.unlink(system_file)
+                        except:
+                            pass
 
         except KeyboardInterrupt:
             break

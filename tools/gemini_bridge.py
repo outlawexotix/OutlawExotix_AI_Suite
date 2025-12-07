@@ -47,55 +47,6 @@ def load_env_file(filepath=".env"):
         pass
     return None
 
-import os
-import sys
-import argparse
-import google.generativeai as genai
-
-def get_context():
-    context = ""
-    
-    # 1. SPATIAL AWARENESS: List files in the shared directory
-    try:
-        files = os.listdir('.')
-        # Limit to 50 files to save tokens, just to give a "sense" of the room
-        file_list = ', '.join(files[:50])
-        if len(files) > 50: file_list += "..."
-        context += f"\n[SHARED DIRECTORY CONTENT]: {file_list}"
-    except Exception:
-        pass
-
-    # 2. HISTORICAL AWARENESS: Read the Project Memory Log
-    # This is the file Claude writes to. Now Gemini reads it too.
-    if os.path.exists("PROJECT_MEMORY.md"):
-        try:
-            with open("PROJECT_MEMORY.md", "r", encoding="utf-8") as f:
-                # Read the last 3000 characters to keep context fresh but concise
-                memory = f.read()[-3000:] 
-                context += f"\n\n[SHARED PROJECT MEMORY (Recent Activity)]:\n{memory}\n"
-        except Exception as e:
-            context += f"\n[MEMORY READ ERROR]: {e}"
-            
-    return context
-
-def load_env_file(filepath=".env"):
-    """Manually parses a .env file to find GOOGLE_API_KEY."""
-    if not os.path.exists(filepath):
-        return None
-    
-    try:
-        with open(filepath, "r") as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith("#") or "=" not in line:
-                    continue
-                key, value = line.split("=", 1)
-                if key.strip() == "GOOGLE_API_KEY":
-                    return value.strip().strip('"').strip("'")
-    except Exception:
-        pass
-    return None
-
 def get_api_key(args):
     """Resolves API Key from multiple sources in priority order."""
     # 1. CLI Argument
