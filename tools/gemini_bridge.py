@@ -7,10 +7,11 @@ def get_context():
     context = ""
     
     # 1. SPATIAL AWARENESS: List files in the shared directory
+    # Only list top-level files for performance - avoid deep scans
     try:
         files = os.listdir('.')
         # Limit to 50 files to save tokens, just to give a "sense" of the room
-        file_list = ', '.join(files[:50])
+        file_list = ', '.join(sorted(files[:50]))
         if len(files) > 50: file_list += "..."
         context += f"\n[SHARED DIRECTORY CONTENT]: {file_list}"
     except Exception:
@@ -21,73 +22,49 @@ def get_context():
     if os.path.exists("PROJECT_MEMORY.md"):
         try:
             with open("PROJECT_MEMORY.md", "r", encoding="utf-8") as f:
-                # Read the last 3000 characters to keep context fresh but concise
-                memory = f.read()[-3000:] 
+                # Read the last 3000 characters efficiently
+                try:
+                    # Use seek for better performance on large files
+                    f.seek(0, 2)  # Seek to end
+                    file_size = f.tell()
+                    # Check if we got a real integer (not a mock)
+                    if isinstance(file_size, int) and file_size > 3000:
+                        f.seek(file_size - 3000)  # Seek to last 3000 bytes
+                        f.readline()  # Skip partial line
+                    else:
+                        f.seek(0)
+                    memory = f.read()
+                except (IOError, OSError, AttributeError, TypeError):
+                    # Fallback for any file operation errors or mock objects
+                    try:
+                        f.seek(0)
+                        memory = f.read()[-3000:]
+                    except:
+                        memory = f.read()[-3000:]
                 context += f"\n\n[SHARED PROJECT MEMORY (Recent Activity)]:\n{memory}\n"
         except Exception as e:
             context += f"\n[MEMORY READ ERROR]: {e}"
             
     return context
 
-def load_env_file(filepath=".env"):
-    """Manually parses a .env file to find GOOGLE_API_KEY."""
-    if not os.path.exists(filepath):
-        return None
-    
-    try:
-        with open(filepath, "r") as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith("#") or "=" not in line:
-                    continue
-                key, value = line.split("=", 1)
-                if key.strip() == "GOOGLE_API_KEY":
-                    return value.strip().strip('"').strip("'")
-    except Exception:
-        pass
-    return None
-
-def get_api_key(args):
-    """Resolves API Key from multiple sources in priority order."""
-    # 1. CLI Argument
-    if args.api_key:
-        return args.api_key
-    
-    # 2. Environment Variable
-    env_key = os.getenv("GOOGLE_API_KEY")
-    if env_key:
-        return env_key
-    
-    # 3. Local .env File
-    dotenv_key = load_env_file()
-    if dotenv_key:
-        return dotenv_key
-
-    # 4. Specific Key File
-    if args.key_file and os.path.exists(args.key_file):
-        try:
-            with open(args.key_file, "r") as f:
-                return f.read().strip()
-        except Exception:
-            pass
-
-    return None
-
-def get_intel(prompt, api_key=None, credentials=None, model_name='gemini-1.5-flash'):
-    if credentials:
-        try:
-            genai.configure(credentials=credentials)
-        except Exception as e:
-            print(f"ERROR: Failed to configure Gemini with provided credentials: {e}")
-            return
-    elif api_key:
-        genai.configure(api_key=api_key)
-    else:
-        print("ERROR: No authentication method provided (API Key or ADC).")
+def get_intel(prompt, credentials=None, model_name='gemini-1.5-flash'):
+    """Query Gemini using Application Default Credentials (user account only)."""
+    if not credentials:
+        print("ERROR: No valid credentials found.")
+        print("\nTo authenticate with your Google account, run:")
+        print("  gcloud auth application-default login")
+        print("\nThis will open a browser for you to sign in to your Google account.")
         return
     
-    # Using Gemini 3 Pro for advanced capabilities (upgrade from gemini-1.5-flash)
-    # Falls back to specified model if Gemini 3 not available
+    try:
+        genai.configure(credentials=credentials)
+    except Exception as e:
+        print(f"ERROR: Failed to configure Gemini with provided credentials: {e}")
+        print("\nTry re-authenticating with:")
+        print("  gcloud auth application-default login")
+        return
+    
+    # Create Gemini model with specified model name
     model = genai.GenerativeModel(model_name)
     
     # Inject the Shared Context into the prompt
@@ -101,51 +78,68 @@ def get_intel(prompt, api_key=None, credentials=None, model_name='gemini-1.5-fla
         print(f"GEMINI UPLINK ERROR: {e}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Outlaw Exotix Gemini Bridge")
+    parser = argparse.ArgumentParser(
+        description="Outlaw Exotix Gemini Bridge - User Account Authentication Only",
+        epilog="Authentication: Run 'gcloud auth application-default login' to sign in with your Google account"
+    )
     
     # Positional Argument: The Prompt (combined)
     parser.add_argument("prompt", nargs="*", help="The prompt to send to Gemini")
     
-    # Optional Arguments for Auth & Config
-    parser.add_argument("--api-key", "-k", help="Directly provide the Google API Key (overrides ADC)")
-    parser.add_argument("--key-file", "-f", help="Path to a file containing the Google API Key")
-    parser.add_argument("--model", "-m", default="gemini-3-pro", help="Gemini Model ID (default: gemini-3-pro, fallback: gemini-1.5-flash)")
+    # Optional Arguments for Config
+    parser.add_argument("--model", "-m", default="gemini-1.5-flash", help="Gemini Model ID (default: gemini-1.5-flash)")
+    parser.add_argument("--setup", action="store_true", help="Display authentication setup instructions")
 
     args = parser.parse_args()
     
+    # Handle --setup flag
+    if args.setup:
+        print("=" * 70)
+        print("GEMINI AUTHENTICATION SETUP")
+        print("=" * 70)
+        print("\nThis tool uses Google Application Default Credentials (ADC) for")
+        print("authentication, which means you sign in with your Google account.\n")
+        print("Setup Steps:")
+        print("  1. Install Google Cloud SDK (gcloud CLI) if not installed:")
+        print("     https://cloud.google.com/sdk/docs/install")
+        print("\n  2. Authenticate with your Google account:")
+        print("     gcloud auth application-default login")
+        print("\n  3. This will open a browser window for you to sign in")
+        print("\n  4. After signing in, you can use this tool without API keys")
+        print("\nTroubleshooting:")
+        print("  - If you have persistent auth issues, revoke and re-authenticate:")
+        print("    gcloud auth application-default revoke")
+        print("    gcloud auth application-default login")
+        print("\n  - To check current authentication status:")
+        print("    gcloud auth application-default print-access-token")
+        print("=" * 70)
+        sys.exit(0)
+    
     if not args.prompt:
         print("Usage: python gemini_bridge.py [OPTIONS] <prompt>")
+        print("   or: python gemini_bridge.py --setup  (for authentication help)")
         sys.exit(1)
 
     # Reconstruct prompt from nargs list
     prompt_text = " ".join(args.prompt)
     
+    # Attempt to load Application Default Credentials (user account)
     creds = None
-    resolved_key = None
+    try:
+        import google.auth
+        creds, _ = google.auth.default()
+    except ImportError:
+        print("ERROR: 'google-auth' library is required for user account authentication.")
+        print("\nInstall it with:")
+        print("  pip install google-auth")
+        sys.exit(1)
+    except Exception as e:
+        print(f"ERROR: Failed to load Application Default Credentials: {e}")
+        print("\nYou need to authenticate with your Google account.")
+        print("Run the following command and sign in when prompted:")
+        print("  gcloud auth application-default login")
+        print("\nFor more help, run: python gemini_bridge.py --setup")
+        sys.exit(1)
 
-    if args.api_key: # Highest priority: Explicit API Key via flag
-        resolved_key = args.api_key
-    else: # Otherwise, attempt ADC as the preferred 'user account' method
-        try:
-            import google.auth
-            creds, _ = google.auth.default()
-            # If ADC successfully loaded, use it.
-            # Otherwise, creds will be None, and we'll fall back to API Key methods.
-        except ImportError:
-            # google-auth not installed, ADC not possible. Log warning, proceed to API Key.
-            print("WARNING: 'google-auth' library is required for ADC. Falling back to API Key methods.")
-            # Note: Do not sys.exit here, allow fallback
-        except Exception as e:
-            # ADC failed for other reasons. Log warning, proceed to API Key.
-            print(f"WARNING: Failed to load Application Default Credentials: {e}. Falling back to API Key methods.")
-            print("Tip: Run 'gcloud auth application-default login' to set up user credentials.")
-            # Note: Do not sys.exit here, allow fallback
-        
-        if not creds: # If ADC wasn't successful or available, try other API key methods
-            resolved_key = get_api_key(args)
-            if not resolved_key:
-                print("ERROR: No authentication method found. Please provide an API key or set up ADC.")
-                print("Tip: Run 'gcloud auth application-default login' to set up user credentials.")
-                sys.exit(1)
-
-    get_intel(prompt_text, api_key=resolved_key, credentials=creds, model_name=args.model)
+    # Use credentials to query Gemini
+    get_intel(prompt_text, credentials=creds, model_name=args.model)

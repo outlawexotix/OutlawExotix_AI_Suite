@@ -14,29 +14,31 @@ def log_entry(entry):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log_file = "PROJECT_MEMORY.md"
 
-    # Cross-platform file locking
+    # Cross-platform file locking with efficient retry
     max_retries = 5
-    retry_delay = 0.1
+    retry_delay = 0.05  # Optimized from 0.1s for faster file operations
 
     for attempt in range(max_retries):
         try:
-            # Header if new file
-            if not os.path.exists(log_file):
-                with open(log_file, "w", encoding="utf-8") as f:
-                    if HAS_FCNTL:
-                        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-                    f.write("# PROJECT MEMORY LOG\n\n")
-                    if HAS_FCNTL:
-                        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
-
-            formatted_entry = f"\n## [{timestamp}]\n{entry}\n"
-
-            with open(log_file, "a", encoding="utf-8") as f:
+            # Check if file exists once before opening
+            file_exists = os.path.exists(log_file)
+            
+            # Use single file open for both creation and append
+            mode = "a" if file_exists else "w"
+            with open(log_file, mode, encoding="utf-8") as f:
                 if HAS_FCNTL:
                     fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                
+                # Write header if new file
+                if not file_exists:
+                    f.write("# PROJECT MEMORY LOG\n\n")
+                
+                # Write entry
+                formatted_entry = f"\n## [{timestamp}]\n{entry}\n"
                 f.write(formatted_entry)
                 f.flush()
                 os.fsync(f.fileno())  # Force write to disk
+                
                 if HAS_FCNTL:
                     fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 

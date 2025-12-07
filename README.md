@@ -11,19 +11,25 @@ This suite integrates **Claude Code CLI** (Execution) and **Google Gemini API** 
 *   `bin/`: PowerShell launcher scripts.
 *   `memory_protocol.md`: The "Mnemosyne" system for shared AI memory.
 
-## ?? Installation
+## 🔧 Installation
 
 1.  **Prerequisites:**
-    *   Python 3.10+ (`pip install google-generativeai colorama`)
+    *   Python 3.10+ (`pip install google-generativeai google-auth colorama`)
     *   Claude Code CLI (`npm install -g @anthropic-ai/claude-code` OR native installer)
-    *   Google Gemini API Key (`GOOGLE_API_KEY` env var)
+    *   Google Cloud SDK for Gemini authentication (see [GEMINI_AUTH_SETUP.md](GEMINI_AUTH_SETUP.md))
 
 2.  **Setup:**
     *   Copy `tools/*.py` to your preferred tools directory (e.g., `~/.claude/tools`).
     *   Copy `templates/*.md` to `~/.claude/templates`.
     *   Edit `tools/war_room.py` and update `CLAUDE_EXE` to point to your Claude executable.
 
-3.  **The "Battle Cry" Alias:**
+3.  **Authenticate with Google (for Gemini):**
+    ```bash
+    gcloud auth application-default login
+    ```
+    See [GEMINI_AUTH_SETUP.md](GEMINI_AUTH_SETUP.md) for detailed instructions.
+
+4.  **The "Battle Cry" Alias:**
     Add this to your PowerShell profile:
     ```powershell
     Set-Alias -Name battlecry -Value 'python Path\To\tools\war_room.py'

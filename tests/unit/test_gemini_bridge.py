@@ -59,144 +59,61 @@ class TestGetContext:
         assert '[MEMORY READ ERROR]' in context
 
 
-class TestLoadEnvFile:
-    """Test .env file parsing"""
-
-    @patch('os.path.exists')
-    @patch('builtins.open', new_callable=mock_open, read_data='GOOGLE_API_KEY=test_key_123\nOTHER_VAR=value')
-    def test_load_env_file_success(self, mock_file, mock_exists):
-        """Test successful API key extraction from .env"""
-        mock_exists.return_value = True
-        key = gemini_bridge.load_env_file()
-
-        assert key == 'test_key_123'
-
-    @patch('os.path.exists')
-    @patch('builtins.open', new_callable=mock_open, read_data='# Comment\nOTHER_VAR=value')
-    def test_load_env_file_no_key(self, mock_file, mock_exists):
-        """Test .env file without API key"""
-        mock_exists.return_value = True
-        key = gemini_bridge.load_env_file()
-
-        assert key is None
-
-    @patch('os.path.exists')
-    def test_load_env_file_missing(self, mock_exists):
-        """Test behavior when .env doesn't exist"""
-        mock_exists.return_value = False
-        key = gemini_bridge.load_env_file()
-
-        assert key is None
-
-    @patch('os.path.exists')
-    @patch('builtins.open', new_callable=mock_open, read_data='GOOGLE_API_KEY="quoted_key"\n')
-    def test_load_env_file_quoted_value(self, mock_file, mock_exists):
-        """Test handling of quoted values in .env"""
-        mock_exists.return_value = True
-        key = gemini_bridge.load_env_file()
-
-        assert key == 'quoted_key'
-        assert '"' not in key
-
-
-class TestGetApiKey:
-    """Test API key resolution priority"""
-
-    def test_api_key_priority_cli_flag(self):
-        """Test CLI flag has highest priority"""
-        args = Mock()
-        args.api_key = 'cli_key'
-        args.key_file = None
-
-        with patch.dict(os.environ, {'GOOGLE_API_KEY': 'env_key'}):
-            key = gemini_bridge.get_api_key(args)
-            assert key == 'cli_key'
-
-    def test_api_key_priority_env_var(self):
-        """Test environment variable is second priority"""
-        args = Mock()
-        args.api_key = None
-        args.key_file = None
-
-        with patch.dict(os.environ, {'GOOGLE_API_KEY': 'env_key'}):
-            with patch('gemini_bridge.load_env_file', return_value=None):
-                key = gemini_bridge.get_api_key(args)
-                assert key == 'env_key'
-
-    def test_api_key_priority_dotenv(self):
-        """Test .env file is third priority"""
-        args = Mock()
-        args.api_key = None
-        args.key_file = None
-
-        with patch.dict(os.environ, {}, clear=True):
-            with patch('gemini_bridge.load_env_file', return_value='dotenv_key'):
-                key = gemini_bridge.get_api_key(args)
-                assert key == 'dotenv_key'
-
-    @patch('os.path.exists')
-    @patch('builtins.open', new_callable=mock_open, read_data='file_key')
-    def test_api_key_from_file(self, mock_file, mock_exists):
-        """Test API key from file"""
-        mock_exists.return_value = True
-        args = Mock()
-        args.api_key = None
-        args.key_file = 'keyfile.txt'
-
-        with patch.dict(os.environ, {}, clear=True):
-            with patch('gemini_bridge.load_env_file', return_value=None):
-                key = gemini_bridge.get_api_key(args)
-                assert key == 'file_key'
-
-    def test_api_key_none_when_missing(self):
-        """Test returns None when no key found"""
-        args = Mock()
-        args.api_key = None
-        args.key_file = None
-
-        with patch.dict(os.environ, {}, clear=True):
-            with patch('gemini_bridge.load_env_file', return_value=None):
-                key = gemini_bridge.get_api_key(args)
-                assert key is None
-
-
-class TestGetIntel:
-    """Test Gemini API interaction"""
-
-    @patch('gemini_bridge.genai.GenerativeModel')
-    @patch('gemini_bridge.genai.configure')
-    @patch('gemini_bridge.get_context')
-    def test_get_intel_with_api_key(self, mock_context, mock_configure, mock_model):
-        """Test get_intel with API key"""
-        mock_context.return_value = "Test context"
-        mock_response = Mock()
-        mock_response.text = "Test response"
-        mock_model.return_value.generate_content.return_value = mock_response
-
-        with patch('builtins.print') as mock_print:
-            gemini_bridge.get_intel("Test prompt", api_key="test_key")
-            mock_configure.assert_called_with(api_key="test_key")
-            mock_print.assert_called_with("Test response")
+class TestAuthentication:
+    """Test Application Default Credentials authentication"""
 
     @patch('builtins.print')
-    def test_get_intel_no_auth(self, mock_print):
-        """Test get_intel fails gracefully without auth"""
-        gemini_bridge.get_intel("Test prompt")
-        mock_print.assert_called_with("ERROR: No authentication method provided (API Key or ADC).")
+    def test_get_intel_no_credentials(self, mock_print):
+        """Test error message when no credentials provided"""
+        gemini_bridge.get_intel("test prompt", credentials=None)
+        
+        # Check that error message was printed
+        calls = [str(call) for call in mock_print.call_args_list]
+        assert any('ERROR: No valid credentials found' in str(call) for call in calls)
+        assert any('gcloud auth application-default login' in str(call) for call in calls)
 
-    @patch('gemini_bridge.genai.GenerativeModel')
-    @patch('gemini_bridge.genai.configure')
-    @patch('gemini_bridge.get_context')
-    def test_get_intel_api_error(self, mock_context, mock_configure, mock_model):
-        """Test get_intel handles API errors"""
-        mock_context.return_value = "Test context"
-        mock_model.return_value.generate_content.side_effect = Exception("API Error")
+    @patch('google.generativeai.configure')
+    @patch('google.generativeai.GenerativeModel')
+    @patch('builtins.print')
+    def test_get_intel_with_credentials(self, mock_print, mock_model_class, mock_configure):
+        """Test successful query with valid credentials"""
+        mock_creds = Mock()
+        mock_model = Mock()
+        mock_response = Mock()
+        mock_response.text = "Test response"
+        mock_model.generate_content.return_value = mock_response
+        mock_model_class.return_value = mock_model
+        
+        gemini_bridge.get_intel("test prompt", credentials=mock_creds)
+        
+        mock_configure.assert_called_once_with(credentials=mock_creds)
+        mock_model.generate_content.assert_called_once()
 
-        with patch('builtins.print') as mock_print:
-            gemini_bridge.get_intel("Test prompt", api_key="test_key")
-            # Check that error was printed
-            calls = [str(call) for call in mock_print.call_args_list]
-            assert any('GEMINI UPLINK ERROR' in str(call) for call in calls)
+    @patch('google.generativeai.configure', side_effect=Exception("Auth error"))
+    @patch('builtins.print')
+    def test_get_intel_auth_error(self, mock_print, mock_configure):
+        """Test handling of authentication errors"""
+        mock_creds = Mock()
+        gemini_bridge.get_intel("test prompt", credentials=mock_creds)
+        
+        calls = [str(call) for call in mock_print.call_args_list]
+        assert any('Failed to configure Gemini' in str(call) for call in calls)
+        assert any('gcloud auth application-default login' in str(call) for call in calls)
+
+    @patch('google.generativeai.configure')
+    @patch('google.generativeai.GenerativeModel')
+    @patch('builtins.print')
+    def test_get_intel_api_error(self, mock_print, mock_model_class, mock_configure):
+        """Test handling of API errors during query"""
+        mock_creds = Mock()
+        mock_model = Mock()
+        mock_model.generate_content.side_effect = Exception("API error")
+        mock_model_class.return_value = mock_model
+        
+        gemini_bridge.get_intel("test prompt", credentials=mock_creds)
+        
+        calls = [str(call) for call in mock_print.call_args_list]
+        assert any('GEMINI UPLINK ERROR' in str(call) for call in calls)
 
 
 if __name__ == '__main__':

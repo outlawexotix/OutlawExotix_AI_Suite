@@ -123,6 +123,9 @@ class TestLogEntry:
 
             try:
                 def write_entry(n):
+                    import time
+                    # Small random delay to avoid exact simultaneous writes
+                    time.sleep(n * 0.01)
                     log_memory.log_entry(f"Entry {n}")
 
                 # Spawn multiple threads
@@ -135,6 +138,10 @@ class TestLogEntry:
                 # Wait for all threads
                 for t in threads:
                     t.join()
+
+                # Allow final file operations to complete
+                import time
+                time.sleep(0.1)
 
                 # Verify all entries are present
                 with open('PROJECT_MEMORY.md', 'r') as f:

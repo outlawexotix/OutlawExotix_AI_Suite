@@ -96,11 +96,10 @@ def loading_sequence():
 def main():    
     check_dependencies()
     draw_header()
-    loading_sequence()
 
-    type_effect("[INFO] GEMINI BRIDGE: ACTIVE", 0.02, Fore.CYAN)
-    type_effect("[INFO] CLAUDE ENGINE: ACTIVE", 0.02, Fore.GREEN)
-    type_effect("[INFO] MNEMOSYNE MEMORY: LINKED", 0.02, Fore.MAGENTA)
+    print(f"{Fore.CYAN}[INFO] GEMINI BRIDGE: ACTIVE{Style.RESET_ALL}")
+    print(f"{Fore.GREEN}[INFO] CLAUDE ENGINE: ACTIVE{Style.RESET_ALL}")
+    print(f"{Fore.MAGENTA}[INFO] MNEMOSYNE MEMORY: LINKED{Style.RESET_ALL}")
     print("\n")
 
     while True:
