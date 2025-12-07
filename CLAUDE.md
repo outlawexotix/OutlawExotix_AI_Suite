@@ -216,10 +216,15 @@ Modify these templates to change how Gemini/Claude receive instructions.
 
 ## Security Considerations
 
-### API Keys
-- Gemini requires `GOOGLE_API_KEY` environment variable
-- Never commit API keys to repository
-- Use environment variables or secrets management
+### Authentication (Gemini)
+- **Personal Account (Native OAuth)**:
+    1. Download OAuth Client JSON from Google Cloud Console.
+    2. Save as `client_secret.json` in project root.
+    3. Run any Gemini command; browser will launch for sign-in.
+- **Enterprise/Cloud (ADC)**: Run `gcloud auth application-default login`.
+- **API Keys**: Set `GOOGLE_API_KEY` environment variable.
+  - Never commit API keys to repository
+  - Use environment variables or secrets management
 
 ### Dangerous Permissions Flag
 War Room uses `--dangerously-skip-permissions` flag on line 45 for Claude.

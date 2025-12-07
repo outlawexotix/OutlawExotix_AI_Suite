@@ -7,149 +7,124 @@ from io import StringIO
 # Add tools directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'tools'))
 
-import war_room
+from war_room import WarRoomConsole
 
+class TestWarRoomConsole:
+    """Test WarRoomConsole class"""
 
-class TestCommandParsing:
-    """Test command parsing logic in War Room"""
+    @pytest.fixture
+    def console(self):
+        """Fixture for WarRoomConsole instance"""
+        return WarRoomConsole()
 
-    def test_mode_command_parsing(self):
-        """Test /mode command extracts target correctly"""
-        cmd = "/mode overwatch"
-        assert cmd.lower().startswith("/mode ")
-        target = cmd[6:].strip()
-        assert target == "overwatch"
+    def test_initialization(self, console):
+        """Test console initializes correctly"""
+        assert console.active_persona_name == "Default"
+        assert console.current_system_prompt is None
+        assert console.running is True
 
-    def test_execute_command_parsing(self):
-        """Test /execute command extracts prompt correctly"""
-        cmd = "/execute do something"
-        assert cmd.lower().startswith("/execute ")
-        prompt = cmd[9:].strip()
-        assert prompt == "do something"
-
-    def test_consult_command_parsing(self):
-        """Test /consult command extracts prompt correctly"""
-        cmd = "/consult give me advice"
-        assert cmd.lower().startswith("/consult ")
-        prompt = cmd[9:].strip()
-        assert prompt == "give me advice"
-
-    def test_codex_command_parsing(self):
-        """Test /codex command extracts prompt correctly"""
-        cmd = "/codex write some code"
-        assert cmd.lower().startswith("/codex ")
-        prompt = cmd[7:].strip()
-        assert prompt == "write some code"
-
-
-class TestModeReset:
-    """Test mode reset functionality"""
-
-    def test_mode_reset_command(self):
-        """Test /mode reset is recognized"""
-        cmd = "/mode reset"
-        target = cmd[6:].strip()
-        assert target.lower() == "reset"
-
-
-class TestTemplatePath:
-    """Test template path construction"""
+    def test_load_persona_reset(self, console):
+        """Test loading 'reset' persona"""
+        console.active_persona_name = "OVERWATCH"
+        console.current_system_prompt = "Old Prompt"
+        
+        console.load_persona("reset")
+        
+        assert console.active_persona_name == "Default"
+        assert console.current_system_prompt is None
 
     @patch('os.path.exists')
-    def test_template_path_construction(self, mock_exists):
-        """Test template path is constructed correctly"""
-        current_dir = os.path.dirname(os.path.abspath(war_room.__file__))
-        project_root = os.path.dirname(current_dir)
-        templates_dir = os.path.join(project_root, "templates")
+    @patch('builtins.open', new_callable=mock_open, read_data="System Prompt Content")
+    def test_load_persona_success(self, mock_file, mock_exists, console):
+        """Test loading a valid persona"""
+        mock_exists.return_value = True
+        
+        console.load_persona("overwatch")
+        
+        assert console.active_persona_name == "OVERWATCH"
+        assert console.current_system_prompt == "System Prompt Content"
+        mock_file.assert_called_once()
 
-        agent_name = "overwatch"
-        template_path = os.path.join(templates_dir, f"{agent_name}.md")
+    @patch('os.path.exists')
+    def test_load_persona_not_found(self, mock_exists, console):
+        """Test loading invalid persona"""
+        mock_exists.return_value = False
+        
+        with patch('os.listdir', return_value=['overwatch.md']):
+             console.load_persona("invalid_one")
+        
+        assert console.active_persona_name == "Default"  # Should not change
 
-        assert template_path.endswith("overwatch.md")
-        assert "templates" in template_path
+    @patch('subprocess.run')
+    def test_call_advisor_gemini(self, mock_run, console):
+        """Test calling Gemini advisor"""
+        mock_process = Mock()
+        mock_process.stdout = "Gemini Advice"
+        mock_process.stderr = ""
+        mock_run.return_value = mock_process
 
+        output = console.call_advisor("gemini_bridge.py", "help me", "GEMINI", "BLUE")
+        
+        assert output == "Gemini Advice"
+        mock_run.assert_called_once()
+        args = mock_run.call_args[0][0]
+        assert "gemini_bridge.py" in args[1] # Script
+        assert "Advice for: help me" in args[2] # Prompt
 
-class TestCrossPlatformCommands:
-    """Test cross-platform command construction"""
+    @patch('subprocess.run')
+    def test_call_advisor_codex(self, mock_run, console):
+        """Test calling Codex advisor"""
+        mock_process = Mock()
+        mock_process.stdout = "Code Blueprint"
+        mock_process.stderr = ""
+        mock_run.return_value = mock_process
 
-    def test_windows_detection(self):
-        """Test Windows OS detection"""
-        with patch('os.name', 'nt'):
-            assert os.name == 'nt'
+        # Make sure we use the correct constant logic for detecting Codex mode in call_advisor
+        # In the implementation, we pass script_path. If it matches strictly constant logic...
+        # Let's mock the constants or just rely on path string matching if strictly implemented.
+        # The implementation compares `script_path == CODEX_BRIDGE`.
+        # So we need to ensure the path string matches what's imported.
+        
+        from tools.war_room import CODEX_BRIDGE
+        output = console.call_advisor(CODEX_BRIDGE, "write code", "CODEX", "BLUE")
+        
+        assert output == "Code Blueprint"
+        args = mock_run.call_args[0][0]
+        assert "codex_bridge.py" in args[1]
+        assert args[2] == "write code" # No "Advice for:" prefix
 
-    def test_unix_detection(self):
-        """Test Unix OS detection"""
-        with patch('os.name', 'posix'):
-            assert os.name == 'posix'
+    @patch.object(WarRoomConsole, 'execute_claude')
+    def test_parse_command_execute(self, mock_execute, console):
+        """Test /execute command parsing"""
+        console.parse_command("/execute do it now")
+        
+        mock_execute.assert_called_once()
+        args = mock_execute.call_args[0]
+        assert args[0] == "do it now" # prompt
+        assert args[1] == "" # advice (skipped)
+        assert args[2] == "GEMINI" # advisor type default
 
-
-class TestSecurityInputValidation:
-    """Test input sanitization and security"""
-
-    def test_command_injection_prevention(self):
-        """Test that malicious inputs are handled safely via temp files"""
-        malicious_prompts = [
-            "$(whoami)",
-            "`rm -rf /`",
-            "; ls -la",
-            "| cat /etc/passwd",
-            "$($env:USERNAME)",
-        ]
-
-        # These should be written to temp files, not interpolated into shell commands
-        for prompt in malicious_prompts:
-            # The new implementation writes to temp files
-            # So these strings never touch the shell directly
-            assert True  # Placeholder - actual test would verify temp file usage
-
-
-class TestAdvisorSelection:
-    """Test advisor bridge selection logic"""
-
-    def test_default_advisor_is_gemini(self):
-        """Test default advisor is Gemini"""
-        from tools import war_room
-        current_dir = os.path.dirname(os.path.abspath(war_room.__file__))
-        gemini_bridge = os.path.join(current_dir, "gemini_bridge.py")
-        assert "gemini_bridge.py" in gemini_bridge
-
-    def test_codex_advisor_selection(self):
-        """Test Codex advisor can be selected"""
-        from tools import war_room
-        current_dir = os.path.dirname(os.path.abspath(war_room.__file__))
-        codex_bridge = os.path.join(current_dir, "codex_bridge.py")
-        assert "codex_bridge.py" in codex_bridge
-
-
-class TestClearScreen:
-    """Test screen clearing functionality"""
+    @patch.object(WarRoomConsole, 'call_advisor')
+    def test_parse_command_consult(self, mock_advisor, console):
+        """Test /consult command parsing"""
+        console.parse_command("/consult just asking")
+        
+        mock_advisor.assert_called_once()
+        args = mock_advisor.call_args[0]
+        assert args[1] == "just asking"
 
     @patch('os.system')
-    def test_clear_screen_windows(self, mock_system):
+    def test_clear_screen_windows(self, mock_system, console):
         """Test clear screen on Windows"""
         with patch('os.name', 'nt'):
-            war_room.clear_screen()
+            console.clear_screen()
             mock_system.assert_called_with('cls')
 
-    @patch('os.system')
-    def test_clear_screen_unix(self, mock_system):
-        """Test clear screen on Unix"""
-        with patch('os.name', 'posix'):
-            war_room.clear_screen()
-            mock_system.assert_called_with('clear')
-
-
-class TestDrawHeader:
-    """Test header drawing"""
-
-    @patch('war_room.clear_screen')
-    @patch('builtins.print')
-    def test_draw_header_outputs_text(self, mock_print, mock_clear):
-        """Test header drawing outputs expected text"""
-        war_room.draw_header()
+    @patch.object(WarRoomConsole, 'clear_screen')
+    def test_draw_header(self, mock_clear, console):
+        """Test draw header"""
+        console.draw_header()
         mock_clear.assert_called_once()
-        assert mock_print.called
-
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

@@ -54,3 +54,10 @@ tools/2war_room.py
 *api_key*
 *credentials*
 !.gitkeep
+
+# OAuth Credentials
+client_secret.json
+token.json
+
+# Test Artifacts
+_test_output.txt

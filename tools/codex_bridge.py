@@ -1,7 +1,8 @@
 import os
 import sys
 import argparse
-import logging
+import time
+from typing import Optional, List, Any
 
 # Try importing openai, handle missing dependency gracefully
 try:
@@ -10,7 +11,11 @@ try:
 except ImportError:
     OPENAI_AVAILABLE = False
 
-def get_context():
+def get_context() -> str:
+    """
+    Gathers context from the environment to provide spatial and historical awareness to Codex.
+    Includes retry logic to handle potential file locking on Windows.
+    """
     context = ""
     
     # 1. SPATIAL AWARENESS: List files in the shared directory
@@ -24,17 +29,31 @@ def get_context():
         pass
 
     # 2. HISTORICAL AWARENESS: Read the Project Memory Log
-    if os.path.exists("PROJECT_MEMORY.md"):
-        try:
-            with open("PROJECT_MEMORY.md", "r", encoding="utf-8") as f:
-                memory = f.read()[-3000:] 
-                context += f"\n\n[SHARED PROJECT MEMORY (Recent Activity)]:\n{memory}\n"
-        except Exception as e:
-            context += f"\n[MEMORY READ ERROR]: {e}"
+    memory_path = "PROJECT_MEMORY.md"
+    if os.path.exists(memory_path):
+        # Retry mechanism for Windows mandatory locking
+        max_retries = 5
+        retry_delay = 0.1
+        
+        for attempt in range(max_retries):
+            try:
+                with open(memory_path, "r", encoding="utf-8") as f:
+                    memory = f.read()[-3000:] 
+                    context += f"\n\n[SHARED PROJECT MEMORY (Recent Activity)]:\n{memory}\n"
+                break # Success
+            except (IOError, OSError):
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                    retry_delay *= 2
+                else:
+                    context += f"\n[MEMORY READ ERROR]: Context lookup timeout (File Locked)"
+            except Exception as e:
+                context += f"\n[MEMORY READ ERROR]: {str(e)}"
+                break
             
     return context
 
-def load_env_key():
+def load_env_key() -> Optional[str]:
     """Check Env Var, Local .env, and Global Key File for OPENAI_API_KEY."""
     # 1. Environment Variable
     env_key = os.getenv("OPENAI_API_KEY")
@@ -44,7 +63,7 @@ def load_env_key():
     # 2. Local .env File
     if os.path.exists(".env"):
         try:
-            with open(".env", "r") as f:
+            with open(".env", "r", encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if line.startswith("#") or "=" not in line:
@@ -56,19 +75,17 @@ def load_env_key():
             pass
 
     # 3. Global Credential File (The "User Login" Equivalent)
-    # Windows: C:\Users\penne\.openai\api_key
-    # Linux: /home/penne/.openai/api_key
     global_key_path = os.path.join(os.path.expanduser("~"), ".openai", "api_key")
     if os.path.exists(global_key_path):
         try:
-            with open(global_key_path, "r") as f:
+            with open(global_key_path, "r", encoding="utf-8") as f:
                 return f.read().strip()
         except Exception:
             pass
 
     return None
 
-def query_codex(prompt, api_key, model="gpt-4o"):
+def query_codex(prompt: str, api_key: Optional[str], model: str = "gpt-4o") -> None:
     if not OPENAI_AVAILABLE:
         print("ERROR: 'openai' python package is missing. Install with: pip install openai")
         return
@@ -99,11 +116,12 @@ def query_codex(prompt, api_key, model="gpt-4o"):
             ],
             temperature=0.2 # Low temp for precise coding
         )
-        print(response.choices[0].message.content)
+        if response.choices and response.choices[0].message:
+             print(response.choices[0].message.content)
     except Exception as e:
-        print(f"CODEX UPLINK ERROR: {e}")
+        print(f"CODEX UPLINK ERROR: {str(e)}")
 
-if __name__ == "__main__":
+def main() -> None:
     parser = argparse.ArgumentParser(description="Outlaw Exotix Codex Bridge (OpenAI)")
     
     parser.add_argument("prompt", nargs="*", help="The coding task for Codex")
@@ -122,3 +140,6 @@ if __name__ == "__main__":
     resolved_key = args.api_key if args.api_key else load_env_key()
     
     query_codex(prompt_text, resolved_key, args.model)
+
+if __name__ == "__main__":
+    main()
