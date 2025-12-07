@@ -35,6 +35,13 @@ def main():
     
     current_system_prompt = None
     active_persona_name = "Default"
+    
+    # Cache available templates on startup for performance
+    available_templates = []
+    try:
+        available_templates = [f.replace('.md','') for f in os.listdir(TEMPLATES_DIR) if f.endswith('.md')]
+    except Exception:
+        pass
 
     while True:
         try:
@@ -68,7 +75,7 @@ def main():
                         print(f"{Fore.RED}[ERROR] Failed to load template: {e}{Style.RESET_ALL}")
                 else:
                     print(f"{Fore.RED}[ERROR] Template not found: {template_path}{Style.RESET_ALL}")
-                    print(f"Available: {[f.replace('.md','') for f in os.listdir(TEMPLATES_DIR) if f.endswith('.md')]}")
+                    print(f"Available: {available_templates}")
                 continue
 
             # 2. EXECUTION FLAGS

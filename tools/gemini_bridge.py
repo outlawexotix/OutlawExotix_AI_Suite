@@ -7,10 +7,11 @@ def get_context():
     context = ""
     
     # 1. SPATIAL AWARENESS: List files in the shared directory
+    # Only list top-level files for performance - avoid deep scans
     try:
         files = os.listdir('.')
         # Limit to 50 files to save tokens, just to give a "sense" of the room
-        file_list = ', '.join(files[:50])
+        file_list = ', '.join(sorted(files[:50]))
         if len(files) > 50: file_list += "..."
         context += f"\n[SHARED DIRECTORY CONTENT]: {file_list}"
     except Exception:
@@ -21,8 +22,20 @@ def get_context():
     if os.path.exists("PROJECT_MEMORY.md"):
         try:
             with open("PROJECT_MEMORY.md", "r", encoding="utf-8") as f:
-                # Read the last 3000 characters to keep context fresh but concise
-                memory = f.read()[-3000:] 
+                # Read the last 3000 characters efficiently
+                try:
+                    f.seek(0, 2)  # Seek to end
+                    file_size = f.tell()
+                    if file_size > 3000:
+                        f.seek(file_size - 3000)  # Seek to last 3000 bytes
+                        f.readline()  # Skip partial line
+                    else:
+                        f.seek(0)
+                    memory = f.read()
+                except (IOError, OSError, TypeError):
+                    # Fallback for unseekable streams (e.g., in tests) or mock issues
+                    f.seek(0)
+                    memory = f.read()[-3000:]
                 context += f"\n\n[SHARED PROJECT MEMORY (Recent Activity)]:\n{memory}\n"
         except Exception as e:
             context += f"\n[MEMORY READ ERROR]: {e}"
