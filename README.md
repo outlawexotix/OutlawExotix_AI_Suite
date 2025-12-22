@@ -9,6 +9,7 @@ This suite integrates **Claude Code CLI** (Execution) and **Google Gemini API** 
 *   `tools/`: Python scripts for the War Room and Gemini Bridge.
 *   `templates/`: Agent Personas (Ethical Hacker, Code Auditor, etc.).
 *   `bin/`: PowerShell launcher scripts.
+*   `projects/`: Workspace for your projects and agent outputs.
 *   `memory_protocol.md`: The "Mnemosyne" system for shared AI memory.
 
 ## ?? Installation
