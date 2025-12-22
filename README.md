@@ -6,7 +6,7 @@ This suite integrates **Claude Code CLI** (Execution) and **Google Gemini API** 
 
 ## ?? Repository Structure
 
-*   `tools/`: Python scripts for the War Room and Gemini Bridge.
+*   `tools/`: Python scripts for the War Room, Gemini Bridge, and Repository Creator.
 *   `templates/`: Agent Personas (Ethical Hacker, Code Auditor, etc.).
 *   `bin/`: PowerShell launcher scripts.
 *   `memory_protocol.md`: The "Mnemosyne" system for shared AI memory.
@@ -48,6 +48,16 @@ battlecry
 ```powershell
 agent overwatch -p "Scan this directory."
 ```
+
+**Create a New Repository:**
+```bash
+python tools/repo_creator.py ~/Outlaw-Forge \
+  --name "Outlaw Forge" \
+  --description "Your project description" \
+  --remote https://github.com/username/repo.git
+```
+
+See [REPO_CREATOR_GUIDE.md](REPO_CREATOR_GUIDE.md) for detailed repository creation usage.
 
 ## ?? Testing
 
