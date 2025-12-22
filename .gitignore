@@ -54,3 +54,13 @@ tools/2war_room.py
 *api_key*
 *credentials*
 !.gitkeep
+
+# Projects folder - ignore common artifacts but keep structure
+projects/**/node_modules/
+projects/**/__pycache__/
+projects/**/.env
+projects/**/*.pyc
+projects/**/dist/
+projects/**/build/
+projects/**/.venv/
+projects/**/venv/
