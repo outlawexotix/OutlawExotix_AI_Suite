@@ -17,6 +17,7 @@ This suite integrates **Claude Code CLI** (Execution) and **Google Gemini API** 
     *   Python 3.10+ (`pip install google-generativeai colorama`)
     *   Claude Code CLI (`npm install -g @anthropic-ai/claude-code` OR native installer)
     *   Google Gemini API Key (`GOOGLE_API_KEY` env var)
+    *   GitHub CLI (`gh`) for repository management (optional)
 
 2.  **Setup:**
     *   Copy `tools/*.py` to your preferred tools directory (e.g., `~/.claude/tools`).
@@ -78,3 +79,14 @@ See [FINAL_TEST_REPORT.md](FINAL_TEST_REPORT.md) for complete test results and [
 
 ## ?? License
 Outlaw Exotix Internal / MIT
+
+---
+
+## ?? GitHub Integration
+
+**OAuth Authorization Command:**
+```bash
+gh auth login
+```
+
+For detailed GitHub setup instructions, see [GITHUB_SETUP.md](GITHUB_SETUP.md).
