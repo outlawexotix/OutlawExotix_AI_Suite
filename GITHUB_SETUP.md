@@ -5,20 +5,34 @@
 ✓ All changes committed to branch `peaceful-volhard`
 ✓ Commit: `6e50c18 - Add comprehensive test suite and security fixes`
 
+## Quick Reference
+
+**OAuth Authorization Command for GitHub:**
+```bash
+gh auth login
+```
+
+This command initiates the OAuth 2.0 authorization flow to authenticate with GitHub.
+
+---
+
 ## Option 1: Using GitHub CLI (Recommended)
 
-### Step 1: Authenticate with GitHub
+### Step 1: Authenticate with GitHub (OAuth Authorization)
+
+The `gh auth login` command uses OAuth 2.0 to securely authenticate:
+
 ```bash
 gh auth login
 ```
 
 Follow the prompts:
 - Select: **GitHub.com**
-- Protocol: **HTTPS**
-- Authenticate: **Login with a web browser** (recommended)
+- Protocol: **HTTPS** (or SSH if preferred)
+- Authenticate: **Login with a web browser** (recommended for OAuth flow)
 - Copy the one-time code shown
 - Press Enter to open browser
-- Paste the code and authorize
+- Paste the code and authorize the GitHub CLI application
 
 ### Step 2: Create Repository
 ```bash
