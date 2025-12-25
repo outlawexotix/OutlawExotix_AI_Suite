@@ -20,7 +20,7 @@ This command initiates the OAuth 2.0 authorization flow to authenticate with Git
 
 ### Step 1: Authenticate with GitHub (OAuth Authorization)
 
-The `gh auth login` command uses OAuth 2.0 to securely authenticate:
+The `gh auth login` command provides secure authentication (supports OAuth 2.0, personal access tokens, and SSH):
 
 ```bash
 gh auth login
@@ -29,7 +29,7 @@ gh auth login
 Follow the prompts:
 - Select: **GitHub.com**
 - Protocol: **HTTPS** (or SSH if preferred)
-- Authenticate: **Login with a web browser** (recommended for OAuth flow)
+- Authenticate: **Login with a web browser** (recommended - uses OAuth 2.0 flow)
 - Copy the one-time code shown
 - Press Enter to open browser
 - Paste the code and authorize the GitHub CLI application

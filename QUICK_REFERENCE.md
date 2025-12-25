@@ -136,7 +136,8 @@ pip install -r requirements-dev.txt
 
 ### Create Repository on GitHub
 ```bash
-gh repo create OutlawExotix_AI_Suite --public --source=. --remote=origin --push
+# Replace 'YOUR_REPO_NAME' with your desired repository name
+gh repo create YOUR_REPO_NAME --public --source=. --remote=origin --push
 ```
 
 ### Push Changes
@@ -181,9 +182,9 @@ pip install -r requirements-dev.txt
 ## Quick Start Checklist
 
 - [ ] Install Python 3.10+
-- [ ] Install GitHub CLI (`gh`)
+- [ ] Install GitHub CLI (`gh`) - See https://cli.github.com/manual/installation
 - [ ] Authenticate with GitHub: `gh auth login`
-- [ ] Install Claude Code CLI
+- [ ] Install Claude Code CLI - See https://docs.anthropic.com/
 - [ ] Set `GOOGLE_API_KEY` environment variable
 - [ ] Install Python dependencies: `pip install google-generativeai colorama`
 - [ ] Copy templates to `~/.claude/templates`
