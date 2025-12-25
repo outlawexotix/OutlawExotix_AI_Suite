@@ -136,8 +136,8 @@ pip install -r requirements-dev.txt
 
 ### Create Repository on GitHub
 ```bash
-# Replace 'YOUR_REPO_NAME' with your desired repository name
-gh repo create YOUR_REPO_NAME --public --source=. --remote=origin --push
+# Replace 'your-project-name' with your desired repository name
+gh repo create your-project-name --public --source=. --remote=origin --push
 ```
 
 ### Push Changes
@@ -184,7 +184,7 @@ pip install -r requirements-dev.txt
 - [ ] Install Python 3.10+
 - [ ] Install GitHub CLI (`gh`) - See https://cli.github.com/manual/installation
 - [ ] Authenticate with GitHub: `gh auth login`
-- [ ] Install Claude Code CLI - See https://docs.anthropic.com/
+- [ ] Install Claude Code CLI - See https://www.npmjs.com/package/@anthropic-ai/claude-code
 - [ ] Set `GOOGLE_API_KEY` environment variable
 - [ ] Install Python dependencies: `pip install google-generativeai colorama`
 - [ ] Copy templates to `~/.claude/templates`
